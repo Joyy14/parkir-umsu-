@@ -15,11 +15,13 @@ import laporanRoutes from './routes/laporan.js';
 
 dotenv.config();
 
-const app = express();
+export const app = express();
 const PORT = process.env.PORT || 5000;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+if (!process.env.VERCEL) {
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
@@ -61,7 +63,8 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server Parkir UMSU berjalan di port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server Parkir UMSU berjalan di port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
