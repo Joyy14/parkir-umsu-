@@ -128,7 +128,6 @@ export const createTransaksi = async (req, res) => {
 export const checkOutTransaksi = async (req, res) => {
   try {
     const { id } = req.params;
-    const { metode_pembayaran } = req.body;
 
     const { data: transaksi, error: getError } = await supabaseAdmin
       .from('transaksi_parkir')
@@ -146,24 +145,11 @@ export const checkOutTransaksi = async (req, res) => {
 
     const waktu_keluar = new Date();
 
-    const { data: kendaraan } = await supabaseAdmin
-      .from('kendaraan')
-      .select('tipe')
-      .eq('id', transaksi.kendaraan_id)
-      .single();
-
-    const tipe = kendaraan?.tipe || 'motor';
-    const durasiHours = Math.max(1, Math.ceil((waktu_keluar - new Date(transaksi.waktu_masuk)) / (1000 * 60 * 60)));
-    const tarif = tipe === 'motor' ? 2000 : 5000;
-    const biaya = durasiHours * tarif;
-
     const { data: updated, error } = await supabaseAdmin
       .from('transaksi_parkir')
       .update({
         waktu_keluar,
         status: 'selesai',
-        biaya,
-        metode_pembayaran: metode_pembayaran || 'tunai',
       })
       .eq('id', id)
       .select()
@@ -229,9 +215,8 @@ export const getLaporanHarian = async (req, res) => {
     }
 
     const totalKendaraan = transaksi.length;
-    const totalMotor = transaksi.filter(t => t.kendaraan?.tipe === 'motor' || (!t.kendaraan && t.biaya > 0 && Number(t.biaya) % 5000 !== 0)).length;
-    const totalMobil = transaksi.filter(t => t.kendaraan?.tipe === 'mobil' || (!t.kendaraan && t.biaya > 0 && Number(t.biaya) % 5000 === 0)).length;
-    const totalPendapatan = transaksi.reduce((sum, t) => sum + Number(t.biaya), 0);
+    const totalMotor = transaksi.filter(t => t.kendaraan?.tipe === 'motor').length;
+    const totalMobil = transaksi.filter(t => t.kendaraan?.tipe === 'mobil').length;
     const aktif = transaksi.filter(t => t.status === 'aktif').length;
 
     res.json({
@@ -239,7 +224,6 @@ export const getLaporanHarian = async (req, res) => {
       totalKendaraan,
       totalMotor,
       totalMobil,
-      totalPendapatan,
       aktif,
       transaksi,
     });

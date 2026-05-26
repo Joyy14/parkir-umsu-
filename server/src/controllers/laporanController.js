@@ -24,42 +24,18 @@ export const getDashboardStats = async (req, res) => {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'aktif');
 
-    const { data: todayTransaksi } = await supabaseAdmin
-      .from('transaksi_parkir')
-      .select('biaya')
-      .gte('waktu_masuk', startOfDay)
-      .lte('waktu_masuk', endOfDay)
-      .eq('status', 'selesai');
-
-    const pendapatanHariIni = todayTransaksi
-      ? todayTransaksi.reduce((sum, t) => sum + Number(t.biaya), 0)
-      : 0;
-
     const { count: bookingHariIni } = await supabaseAdmin
       .from('booking')
       .select('*', { count: 'exact', head: true })
       .eq('tanggal', today)
       .neq('status', 'dibatalkan');
 
-    const { data: transaksiBulanIni } = await supabaseAdmin
-      .from('transaksi_parkir')
-      .select('biaya, waktu_masuk')
-      .gte('waktu_masuk', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
-      .lte('waktu_masuk', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString())
-      .eq('status', 'selesai');
-
-    const pendapatanBulanIni = transaksiBulanIni
-      ? transaksiBulanIni.reduce((sum, t) => sum + Number(t.biaya), 0)
-      : 0;
-
     res.json({
       totalKendaraan,
       totalSlots,
       slotTersedia,
       parkirAktif,
-      pendapatanHariIni,
       bookingHariIni,
-      pendapatanBulanIni,
     });
   } catch (error) {
     console.error('Get dashboard stats error:', error);
@@ -88,29 +64,22 @@ export const getLaporanBulanan = async (req, res) => {
     }
 
     const totalTransaksi = transaksi.length;
-    const totalPendapatan = transaksi.reduce((sum, t) => sum + Number(t.biaya), 0);
     const selesai = transaksi.filter(t => t.status === 'selesai').length;
-    const motor = transaksi.filter(t => {
-      return t.kendaraan?.tipe === 'motor' || (!t.kendaraan && t.biaya > 0 && Number(t.biaya) % 5000 !== 0);
-    }).length;
-    const mobil = transaksi.filter(t => {
-      return t.kendaraan?.tipe === 'mobil' || (!t.kendaraan && t.biaya > 0 && Number(t.biaya) % 5000 === 0);
-    }).length;
+    const motor = transaksi.filter(t => t.kendaraan?.tipe === 'motor').length;
+    const mobil = transaksi.filter(t => t.kendaraan?.tipe === 'mobil').length;
 
     const harian = {};
     transaksi.forEach(t => {
       const day = new Date(t.waktu_masuk).toISOString().split('T')[0];
       if (!harian[day]) {
-        harian[day] = { tanggal: day, total: 0, pendapatan: 0 };
+        harian[day] = { tanggal: day, total: 0 };
       }
       harian[day].total++;
-      harian[day].pendapatan += Number(t.biaya);
     });
 
     res.json({
       periode: `${bln}/${thn}`,
       totalTransaksi,
-      totalPendapatan,
       selesai,
       motor,
       mobil,

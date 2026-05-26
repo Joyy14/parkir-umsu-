@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { kendaraanAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Car, Plus, Search, Edit2, Trash2 } from 'lucide-react';
+import { Car, Plus, Search, Edit2, Trash2, Bike } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Kendaraan() {
@@ -10,18 +10,10 @@ export default function Kendaraan() {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({
-    plat_nomor: '',
-    merek: '',
-    model: '',
-    warna: '',
-    tipe: 'motor',
-  });
+  const [form, setForm] = useState({ plat_nomor: '', merek: '', model: '', warna: '', tipe: 'motor' });
   const { hasRole } = useAuth();
 
-  useEffect(() => {
-    fetchKendaraan();
-  }, []);
+  useEffect(() => { fetchKendaraan(); }, []);
 
   const fetchKendaraan = async (query = '') => {
     try {
@@ -29,228 +21,139 @@ export default function Kendaraan() {
       if (query) params.plat_nomor = query;
       const { data } = await kendaraanAPI.getAll(params);
       setKendaraan(data.data || []);
-    } catch (error) {
-      toast.error('Gagal memuat data kendaraan');
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { toast.error('Gagal memuat data kendaraan'); }
+    finally { setLoading(false); }
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    fetchKendaraan(search);
-  };
+  const handleSearch = (e) => { e.preventDefault(); fetchKendaraan(search); };
 
-  const openAdd = () => {
-    setEditing(null);
-    setForm({ plat_nomor: '', merek: '', model: '', warna: '', tipe: 'motor' });
-    setShowModal(true);
-  };
-
-  const openEdit = (item) => {
-    setEditing(item);
-    setForm({
-      plat_nomor: item.plat_nomor,
-      merek: item.merek,
-      model: item.model || '',
-      warna: item.warna || '',
-      tipe: item.tipe,
-    });
-    setShowModal(true);
-  };
+  const openAdd = () => { setEditing(null); setForm({ plat_nomor: '', merek: '', model: '', warna: '', tipe: 'motor' }); setShowModal(true); };
+  const openEdit = (item) => { setEditing(item); setForm({ plat_nomor: item.plat_nomor, merek: item.merek, model: item.model || '', warna: item.warna || '', tipe: item.tipe }); setShowModal(true); };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!form.plat_nomor || !form.merek) {
-      toast.error('Plat nomor dan merek harus diisi');
-      return;
-    }
-
+    if (!form.plat_nomor || !form.merek) { toast.error('Plat nomor dan merek harus diisi'); return; }
     try {
-      if (editing) {
-        await kendaraanAPI.update(editing.id, form);
-        toast.success('Kendaraan berhasil diupdate');
-      } else {
-        await kendaraanAPI.create(form);
-        toast.success('Kendaraan berhasil ditambahkan');
-      }
-      setShowModal(false);
-      fetchKendaraan(search);
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Gagal menyimpan data');
-    }
+      if (editing) { await kendaraanAPI.update(editing.id, form); toast.success('Kendaraan berhasil diupdate'); }
+      else { await kendaraanAPI.create(form); toast.success('Kendaraan berhasil ditambahkan'); }
+      setShowModal(false); fetchKendaraan(search);
+    } catch (error) { toast.error(error.response?.data?.message || 'Gagal menyimpan data'); }
   };
 
   const handleDelete = async (id) => {
     if (!confirm('Yakin ingin menghapus kendaraan ini?')) return;
-
-    try {
-      await kendaraanAPI.delete(id);
-      toast.success('Kendaraan berhasil dihapus');
-      fetchKendaraan(search);
-    } catch (error) {
-      toast.error('Gagal menghapus kendaraan');
-    }
+    try { await kendaraanAPI.delete(id); toast.success('Kendaraan berhasil dihapus'); fetchKendaraan(search); }
+    catch (error) { toast.error('Gagal menghapus kendaraan'); }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Kendaraan</h1>
-          <p className="text-gray-500 mt-1">Manajemen data kendaraan</p>
+    <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="page-header">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="page-title">Kendaraan</h1>
+            <p className="page-subtitle">Manajemen data kendaraan terdaftar</p>
+          </div>
+          {hasRole('admin', 'petugas') && (
+            <button onClick={openAdd} className="btn-primary">
+              <Plus className="h-4 w-4" />
+              Tambah Kendaraan
+            </button>
+          )}
         </div>
-        {hasRole('admin', 'petugas') && (
-          <button onClick={openAdd} className="btn-primary flex items-center space-x-2">
-            <Plus className="h-4 w-4" />
-            <span>Tambah</span>
-          </button>
-        )}
       </div>
 
-      <form onSubmit={handleSearch} className="flex space-x-2">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari plat nomor..."
-            className="input-field pl-10"
-          />
-        </div>
-        <button type="submit" className="btn-primary">Cari</button>
-      </form>
+      <div className="flex flex-wrap gap-3 items-center">
+        <form onSubmit={handleSearch} className="flex-1 max-w-md flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari plat nomor..." className="input-field pl-11" />
+          </div>
+          <button type="submit" className="btn-primary btn-sm">Cari</button>
+        </form>
+      </div>
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="flex justify-center py-16">
+          <div className="animate-spin rounded-full h-10 w-10 border-[3px] border-primary-500 border-t-transparent"></div>
+        </div>
+      ) : kendaraan.length === 0 ? (
+        <div className="card text-center py-16">
+          <Car className="h-12 w-12 mx-auto mb-3 text-gray-200" />
+          <p className="text-gray-500 font-medium">Belum ada data kendaraan</p>
+          {hasRole('admin', 'petugas') && (
+            <button onClick={openAdd} className="btn-primary mt-4">
+              <Plus className="h-4 w-4" /> Tambah Kendaraan
+            </button>
+          )}
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full bg-white rounded-xl shadow-sm border border-gray-100">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600">Plat Nomor</th>
-                <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600">Merek</th>
-                <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600">Model</th>
-                <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600">Warna</th>
-                <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600">Tipe</th>
-                <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {kendaraan.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                    <Car className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                    Belum ada data kendaraan
-                  </td>
-                </tr>
-              ) : (
-                kendaraan.map((item) => (
-                  <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">{item.plat_nomor}</td>
-                    <td className="px-4 py-3 text-gray-700">{item.merek}</td>
-                    <td className="px-4 py-3 text-gray-700">{item.model || '-'}</td>
-                    <td className="px-4 py-3 text-gray-700">{item.warna || '-'}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        item.tipe === 'motor' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
-                      }`}>
-                        {item.tipe}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => openEdit(item)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        {hasRole('admin') && (
-                          <button
-                            onClick={() => handleDelete(item.id)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {kendaraan.map((item) => (
+            <div key={item.id} className="card card-hover">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.tipe === 'motor' ? 'bg-blue-100' : 'bg-emerald-100'}`}>
+                    {item.tipe === 'motor' ? <Bike className={`h-5 w-5 text-blue-600`} /> : <Car className={`h-5 w-5 text-emerald-600`} />}
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900">{item.plat_nomor}</p>
+                    <p className="text-sm text-gray-500">{item.merek} {item.model ? `- ${item.model}` : ''}</p>
+                  </div>
+                </div>
+                <span className={`badge ${item.tipe === 'motor' ? 'badge-blue' : 'badge-green'}`}>{item.tipe}</span>
+              </div>
+              <div className="mt-3 flex items-center justify-between border-t border-gray-50 pt-3">
+                <span className="text-sm text-gray-400">{item.warna || '-'}</span>
+                <div className="flex gap-1">
+                  <button onClick={() => openEdit(item)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                  {hasRole('admin') && (
+                    <button onClick={() => handleDelete(item.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">
-              {editing ? 'Edit Kendaraan' : 'Tambah Kendaraan'}
-            </h3>
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-6">{editing ? 'Edit Kendaraan' : 'Tambah Kendaraan'}</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Plat Nomor</label>
-                <input
-                  type="text"
-                  value={form.plat_nomor}
-                  onChange={(e) => setForm({ ...form, plat_nomor: e.target.value })}
-                  className="input-field"
-                  placeholder="BK 1234 AB"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Plat Nomor</label>
+                <input type="text" value={form.plat_nomor} onChange={(e) => setForm({ ...form, plat_nomor: e.target.value })} className="input-field" placeholder="BK 1234 AB" />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Merek</label>
-                  <input
-                    type="text"
-                    value={form.merek}
-                    onChange={(e) => setForm({ ...form, merek: e.target.value })}
-                    className="input-field"
-                    placeholder="Honda"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Merek</label>
+                  <input type="text" value={form.merek} onChange={(e) => setForm({ ...form, merek: e.target.value })} className="input-field" placeholder="Honda" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
-                  <input
-                    type="text"
-                    value={form.model}
-                    onChange={(e) => setForm({ ...form, model: e.target.value })}
-                    className="input-field"
-                    placeholder="Vario"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Model</label>
+                  <input type="text" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} className="input-field" placeholder="Vario" />
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Warna</label>
-                  <input
-                    type="text"
-                    value={form.warna}
-                    onChange={(e) => setForm({ ...form, warna: e.target.value })}
-                    className="input-field"
-                    placeholder="Hitam"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Warna</label>
+                  <input type="text" value={form.warna} onChange={(e) => setForm({ ...form, warna: e.target.value })} className="input-field" placeholder="Hitam" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipe</label>
-                  <select
-                    value={form.tipe}
-                    onChange={(e) => setForm({ ...form, tipe: e.target.value })}
-                    className="input-field"
-                  >
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipe</label>
+                  <select value={form.tipe} onChange={(e) => setForm({ ...form, tipe: e.target.value })} className="input-field">
                     <option value="motor">Motor</option>
                     <option value="mobil">Mobil</option>
                   </select>
                 </div>
               </div>
-              <div className="flex space-x-3 pt-2">
+              <div className="flex gap-3 pt-2">
                 <button type="submit" className="btn-primary flex-1">Simpan</button>
                 <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">Batal</button>
               </div>
