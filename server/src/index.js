@@ -21,8 +21,6 @@ const PORT = process.env.PORT || 5000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-if (!process.env.VERCEL) {
-
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
   origin: process.env.CORS_ORIGIN || true,
@@ -48,9 +46,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-const clientDist = path.join(__dirname, '../../client/dist');
-app.use(express.static(clientDist));
-
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({
@@ -59,9 +54,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(clientDist, 'index.html'));
-});
+if (!process.env.VERCEL) {
+  const clientDist = path.join(__dirname, '../../client/dist');
+  app.use(express.static(clientDist));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server Parkir UMSU berjalan di port ${PORT}`);
