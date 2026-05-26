@@ -15,8 +15,9 @@ export default function QRScanner({ onScan, onClose }) {
 
     async function init() {
       try {
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+          video: { facingMode: isMobile ? 'environment' : 'user', width: { ideal: 640 }, height: { ideal: 480 } },
           audio: false,
         });
         if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
